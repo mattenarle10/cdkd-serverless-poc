@@ -1,0 +1,7 @@
+node_modules/
+cdk.out*/
+coverage/
+*.outputs.json
+.env
+.DS_Store
+

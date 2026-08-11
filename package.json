@@ -22,7 +22,7 @@
   "devDependencies": {
     "@go-to-k/cdkd": "0.280.17",
     "@types/aws-lambda": "8.10.162",
-    "@types/node": "24.13.3",
+    "@types/node": "26.2.0",
     "aws-cdk": "2.1135.1",
     "esbuild": "0.28.2",
     "tsx": "4.23.12",

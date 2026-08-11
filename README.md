@@ -49,7 +49,7 @@ CdkdServerlessCfn    -> cdk deploy  -> CloudFormation state
 CdkdServerlessDirect -> cdkd deploy -> cdkd S3 state
 ```
 
-Locally, both CLIs synthesize the same infrastructure shape for `CdkdServerlessDirect`. The verification command checks the TypeScript, runs 13 tests, bundles both Lambdas, synthesizes with both CLIs, normalizes their content-addressed Lambda asset hashes, and compares the remaining template JSON.
+Locally, both CLIs synthesize the same infrastructure shape for `CdkdServerlessDirect`. The verification command checks the TypeScript, runs 13 tests, bundles both Lambdas, synthesizes with both CLIs, removes non-deployable CDK analytics metadata, normalizes their content-addressed Lambda asset hashes, and compares the remaining template JSON.
 
 ```bash
 npm ci

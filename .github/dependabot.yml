@@ -4,8 +4,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Keep runtime types aligned with the Node.js 24 runtime used by CI and Lambda.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-

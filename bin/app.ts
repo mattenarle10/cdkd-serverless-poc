@@ -5,7 +5,7 @@ import { ServerlessStack } from '../lib/serverless-stack.js';
 const app = new App();
 const env = {
   ...(process.env.CDK_DEFAULT_ACCOUNT && { account: process.env.CDK_DEFAULT_ACCOUNT }),
-  region: process.env.CDK_DEFAULT_REGION ?? process.env.AWS_REGION ?? 'ap-southeast-1',
+  region: process.env.AWS_REGION ?? 'ap-southeast-1',
 };
 
 new ServerlessStack(app, 'CdkdServerlessCfn', {

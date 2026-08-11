@@ -49,7 +49,7 @@ CdkdServerlessCfn    -> cdk deploy  -> CloudFormation state
 CdkdServerlessDirect -> cdkd deploy -> cdkd S3 state
 ```
 
-Locally, both CLIs synthesize the same `CdkdServerlessDirect` template. The verification command checks the TypeScript, runs 13 tests, bundles both Lambdas, synthesizes with both CLIs, and compares the template JSON.
+Locally, both CLIs synthesize the same infrastructure shape for `CdkdServerlessDirect`. The verification command checks the TypeScript, runs 13 tests, bundles both Lambdas, synthesizes with both CLIs, normalizes their content-addressed Lambda asset hashes, and compares the remaining template JSON.
 
 ```bash
 npm ci
@@ -59,7 +59,7 @@ npm run verify
 Expected final line:
 
 ```txt
-Templates match exactly: 20 deployable resources.
+Templates have the same infrastructure shape: 20 deployable resources.
 ```
 
 Nothing in that command creates AWS resources.
@@ -196,4 +196,3 @@ Shared staging and production        -> CDK + CloudFormation
 Drop-in compatible does not mean operationally identical.
 
 That is the part this POC is meant to test honestly.
-

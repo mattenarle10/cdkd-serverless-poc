@@ -6,7 +6,11 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
-    "synth": "cdk synth --quiet"
+    "synth": "cdk synth --quiet",
+    "synth:cdk": "cdk synth --quiet --output cdk.out.cfn",
+    "synth:cdkd": "cdkd synth --output cdk.out.cdkd",
+    "compare:templates": "node scripts/compare-templates.mjs",
+    "verify": "npm run check && npm test && npm run synth:cdk && npm run synth:cdkd && npm run compare:templates"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.1107.0",

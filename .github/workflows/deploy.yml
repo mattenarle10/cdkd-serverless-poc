@@ -1,0 +1,115 @@
+name: Deploy development stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: Deployment engine
+        required: true
+        default: cdkd
+        type: choice
+        options:
+          - cdkd
+          - cdk
+      operation:
+        description: Operation to run
+        required: true
+        default: deploy
+        type: choice
+        options:
+          - bootstrap
+          - deploy
+          - destroy
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cdkd-serverless-${{ inputs.engine }}
+  cancel-in-progress: false
+
+jobs:
+  operate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: development
+    env:
+      APP_VERSION: ${{ github.sha }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Validate deployment configuration
+        run: |
+          test -n "$AWS_REGION" || { echo "AWS_REGION repository variable is required."; exit 1; }
+          test -n "$AWS_ROLE_ARN" || { echo "AWS_ROLE_ARN environment secret is required."; exit 1; }
+
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: cdkd-serverless-poc
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity > /dev/null
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bootstrap cdkd
+        if: inputs.operation == 'bootstrap' && inputs.engine == 'cdkd'
+        run: npx cdkd bootstrap --region "$AWS_REGION" --yes
+
+      - name: Bootstrap AWS CDK
+        if: inputs.operation == 'bootstrap' && inputs.engine == 'cdk'
+        run: npx cdk bootstrap
+
+      - name: Deploy with cdkd
+        if: inputs.operation == 'deploy' && inputs.engine == 'cdkd'
+        run: npx cdkd deploy CdkdServerlessDirect --full-wait --yes
+
+      - name: Deploy with AWS CDK
+        if: inputs.operation == 'deploy' && inputs.engine == 'cdk'
+        run: >-
+          npx cdk deploy CdkdServerlessCfn
+          --require-approval never
+          --outputs-file cdk.outputs.json
+
+      - name: Resolve deployed API URL
+        if: inputs.operation == 'deploy'
+        id: api
+        env:
+          DEPLOY_ENGINE: ${{ inputs.engine }}
+        run: |
+          if [ "$DEPLOY_ENGINE" = "cdkd" ]; then
+            api_url=$(node scripts/resolve-api-url.mjs cdkd CdkdServerlessDirect)
+          else
+            api_url=$(node scripts/resolve-api-url.mjs cdk CdkdServerlessCfn)
+          fi
+          echo "::add-mask::$api_url"
+          echo "api_url=$api_url" >> "$GITHUB_OUTPUT"
+
+      - name: Run end-to-end smoke test
+        if: inputs.operation == 'deploy'
+        env:
+          API_URL: ${{ steps.api.outputs.api_url }}
+        run: node scripts/smoke-test.mjs
+
+      - name: Destroy cdkd stack
+        if: inputs.operation == 'destroy' && inputs.engine == 'cdkd'
+        run: npx cdkd destroy CdkdServerlessDirect --purge-events --yes
+
+      - name: Destroy CloudFormation stack
+        if: inputs.operation == 'destroy' && inputs.engine == 'cdk'
+        run: npx cdk destroy CdkdServerlessCfn --force
+
